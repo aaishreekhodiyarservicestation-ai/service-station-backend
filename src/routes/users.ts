@@ -1,16 +1,17 @@
 import express from 'express';
-import { getUsers, getUser, updateUser, deleteUser } from '../controllers/userController';
+import { getUsers, getUser, updateUser, deleteUser, reactivateUser } from '../controllers/userController';
 import { protect } from '../middleware/auth';
-import { authorize } from '../middleware/rbac';
+import { authorize, checkPermission } from '../middleware/rbac';
 import { UserRole } from '../models/User';
 
 const router = express.Router();
 
 router.use(protect);
 
-router.get('/', authorize(UserRole.ADMIN, UserRole.MANAGER), getUsers);
-router.get('/:id', getUser);
+router.get('/', checkPermission('staff.view'), getUsers);
+router.get('/:id', checkPermission('staff.view'), getUser);
 router.put('/:id', authorize(UserRole.ADMIN), updateUser);
 router.delete('/:id', authorize(UserRole.ADMIN), deleteUser);
+router.patch('/:id/reactivate', authorize(UserRole.ADMIN), reactivateUser);
 
 export default router;

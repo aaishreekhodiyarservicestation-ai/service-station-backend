@@ -13,6 +13,7 @@ import vehicleRoutes from './routes/vehicles';
 import stationRoutes from './routes/stations';
 import userRoutes from './routes/users';
 import reportRoutes from './routes/reports';
+import reminderRoutes from './routes/reminders';
 
 // Initialize express app
 const app: Application = express();
@@ -25,10 +26,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(
-  cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
-  })
+  cors({})
 );
 
 // Body parser middleware
@@ -65,6 +63,7 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

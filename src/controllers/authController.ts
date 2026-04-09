@@ -32,7 +32,7 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
       return;
     }
 
-    const { username, email, password, fullName, role, stationId } = req.body;
+    const { username, email, password, fullName, role, stationId, permissions, isManagement } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
@@ -54,7 +54,9 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
       password,
       fullName,
       role,
-      stationId,
+      stationId: stationId || undefined,
+      permissions: permissions || [],
+      isManagement: isManagement || false,
     });
 
     res.status(201).json({
@@ -143,12 +145,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       data: {
         token,
         user: {
-          id: user._id,
+          _id: user._id,
           username: user.username,
           email: user.email,
           fullName: user.fullName,
           role: user.role,
-          station: user.stationId,
+          permissions: user.permissions,
+          isManagement: user.isManagement,
+          stationId: user.stationId,
         },
       },
     });

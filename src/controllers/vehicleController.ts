@@ -24,14 +24,18 @@ export const createVehicle = async (req: AuthRequest, res: Response): Promise<vo
     const {
       vehicleType,
       companyBrand,
+      modelNumber,
       registrationNumber,
       engineNumber,
       chassisNumber,
+      kmDriven,
+      description,
       owner,
       dropOffPerson,
       pickUpPerson,
       dateSubmitted,
       status,
+      advancePayment,
     } = req.body;
 
     // Create owner
@@ -50,7 +54,13 @@ export const createVehicle = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     // Generate serial number
-    const stationId = req.user!.stationId.toString();
+    // const stationId = req.user!.stationId.toString();
+    if (!req.user || !req.user.stationId) {
+      res.status(401).json({ success: false, message: 'Unauthorized: Missing station info' });
+      return;
+    }
+
+    const stationId = req.user.stationId.toString();
     const serialNumber = await generateSerialNumber(stationId);
 
     // Create vehicle
@@ -58,9 +68,12 @@ export const createVehicle = async (req: AuthRequest, res: Response): Promise<vo
       serialNumber,
       vehicleType,
       companyBrand,
+      modelNumber: modelNumber || undefined,
       registrationNumber,
-      engineNumber,
-      chassisNumber,
+      engineNumber: engineNumber || undefined,
+      chassisNumber: chassisNumber || undefined,
+      kmDriven: kmDriven !== undefined && kmDriven !== '' ? Number(kmDriven) : undefined,
+      description: description || undefined,
       ownerId: ownerDoc._id,
       dropOffPersonId: dropOffPersonDoc?._id,
       pickUpPersonId: pickUpPersonDoc?._id,
@@ -68,6 +81,8 @@ export const createVehicle = async (req: AuthRequest, res: Response): Promise<vo
       status: status || 'pending',
       stationId: req.user!.stationId,
       documents: [],
+      advancePayment: advancePayment !== undefined && advancePayment !== '' ? Number(advancePayment) : 0,
+      payments: [],
       createdBy: req.user!._id,
     });
 
@@ -367,7 +382,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
     // Pending deliveries
     const pendingDeliveries = await Vehicle.countDocuments({
       ...baseQuery,
-      status: { $in: ['in_service', 'pending'] },
+      status: { $in: ['completed', 'pending'] },
     });
 
     // Completed entries
@@ -381,7 +396,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const alerts = await Vehicle.countDocuments({
       ...baseQuery,
-      status: { $in: ['in_service', 'pending'] },
+      status: { $in: ['completed', 'pending'] },
       dateSubmitted: { $lte: sevenDaysAgo },
       dateCollected: { $exists: false },
     });
@@ -400,6 +415,48 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
   }
 };
 
+/**
+ * @desc    Add a payment entry to a vehicle
+ * @route   POST /api/vehicles/:id/payments
+ * @access  Private (Manager, Admin)
+ */
+export const addPayment = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { amount, description } = req.body;
+
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      res.status(400).json({ success: false, message: 'A valid positive amount is required' });
+      return;
+    }
+
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) {
+      res.status(404).json({ success: false, message: 'Vehicle not found' });
+      return;
+    }
+
+    vehicle.payments.push({
+      amount: Number(amount),
+      description: description || '',
+      createdAt: new Date(),
+      createdBy: req.user!._id,
+    });
+    vehicle.updatedBy = req.user!._id;
+    await vehicle.save();
+
+    const updatedVehicle = await Vehicle.findById(vehicle._id)
+      .populate('payments.createdBy', 'fullName');
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment added successfully',
+      data: updatedVehicle?.payments,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export default {
   createVehicle,
   getVehicles,
@@ -408,4 +465,5 @@ export default {
   deleteVehicle,
   uploadDocument,
   getDashboardStats,
+  addPayment,
 };

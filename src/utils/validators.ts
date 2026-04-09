@@ -28,10 +28,17 @@ export const validateUserRegistration: ValidationChain[] = [
     .isIn(['admin', 'manager', 'staff'])
     .withMessage('Invalid user role'),
   body('stationId')
-    .notEmpty()
-    .withMessage('Station is required')
+    .optional({ checkFalsy: true })
     .isMongoId()
     .withMessage('Invalid station ID'),
+  body('isManagement')
+    .optional()
+    .isBoolean()
+    .withMessage('isManagement must be a boolean'),
+  body('permissions')
+    .optional()
+    .isArray()
+    .withMessage('Permissions must be an array'),
 ];
 
 export const validateLogin: ValidationChain[] = [
@@ -72,8 +79,8 @@ export const validateStation: ValidationChain[] = [
 // Vehicle validation
 export const validateVehicle: ValidationChain[] = [
   body('vehicleType')
-    .isIn(['bike', 'car', 'truck', 'other'])
-    .withMessage('Invalid vehicle type'),
+    .isIn(['gear', 'non_gear'])
+    .withMessage('Invalid vehicle type. Must be gear or non_gear'),
   body('companyBrand')
     .trim()
     .notEmpty()
@@ -84,14 +91,12 @@ export const validateVehicle: ValidationChain[] = [
     .withMessage('Registration number is required')
     .matches(/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{1,4}$/)
     .withMessage('Please provide a valid registration number (e.g., MH12AB1234)'),
-  body('engineNumber')
-    .trim()
-    .notEmpty()
-    .withMessage('Engine number is required'),
-  body('chassisNumber')
-    .trim()
-    .notEmpty()
-    .withMessage('Chassis number is required'),
+  body('engineNumber').trim().optional({ checkFalsy: true }),
+  body('chassisNumber').trim().optional({ checkFalsy: true }),
+  body('modelNumber').trim().optional({ checkFalsy: true }),
+  body('kmDriven').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('KM driven must be a positive number'),
+  body('description').trim().optional({ checkFalsy: true }),
+  body('advancePayment').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Advance payment must be a positive number'),
   body('owner.name')
     .trim()
     .notEmpty()
@@ -105,12 +110,10 @@ export const validateVehicle: ValidationChain[] = [
     .matches(/^[0-9]{10}$/)
     .withMessage('Please provide a valid 10-digit mobile number'),
   body('owner.idProofType')
+    .optional({ checkFalsy: true })
     .isIn(['Aadhar Card', 'PAN Card', 'Driving License', 'Passport', 'Voter ID', 'Other'])
     .withMessage('Invalid ID proof type'),
-  body('owner.idProofNumber')
-    .trim()
-    .notEmpty()
-    .withMessage('Owner ID proof number is required'),
+  body('owner.idProofNumber').trim().optional({ checkFalsy: true }),
 ];
 
 export default {

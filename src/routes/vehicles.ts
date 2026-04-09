@@ -7,6 +7,7 @@ import {
   deleteVehicle,
   uploadDocument,
   getDashboardStats,
+  addPayment,
 } from '../controllers/vehicleController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/rbac';
@@ -31,5 +32,8 @@ router.delete('/:id', authorize(UserRole.MANAGER, UserRole.ADMIN), deleteVehicle
 
 // File upload
 router.post('/:id/upload', upload.single('document'), uploadDocument);
+
+// Payments
+router.post('/:id/payments', authorize(UserRole.MANAGER, UserRole.ADMIN), addPayment);
 
 export default router;

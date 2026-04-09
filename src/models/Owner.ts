@@ -4,8 +4,8 @@ export interface IOwner extends Document {
   name: string;
   address: string;
   mobile: string;
-  idProofType: string;
-  idProofNumber: string;
+  idProofType?: string;
+  idProofNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,13 +30,11 @@ const OwnerSchema: Schema = new Schema(
     },
     idProofType: {
       type: String,
-      required: [true, 'ID proof type is required'],
       trim: true,
-      enum: ['Aadhar Card', 'PAN Card', 'Driving License', 'Passport', 'Voter ID', 'Other'],
+      enum: ['Aadhar Card', 'PAN Card', 'Driving License', 'Passport', 'Voter ID', 'Other', ''],
     },
     idProofNumber: {
       type: String,
-      required: [true, 'ID proof number is required'],
       trim: true,
     },
   },
